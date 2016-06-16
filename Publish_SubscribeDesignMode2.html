@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<script>
+	var pubsub = {};
+	(function(q){
+
+		var topics = {},
+			subUid = -1;
+
+		//发布货广播事件，包含特定的tipic名称和参数
+		q.publish = function(topic,args){
+			if(!topics[topic]){
+				return false;
+			}
+
+			var  subscribes = topics[topic],
+				len = subscribes?subscribes.length:0;
+
+			while(len--){
+				subscribes[len].func(topic,args);
+			}
+			return this;
+		}
+
+		//通过特定的名称和回调函数订阅事件，topic/event触发时执行事件
+		q.subscribe = function(topic,func){
+			if(!topics[topic]){
+				topics[topic] = [];
+			}
+
+			var token = (++subUid).toString();
+			topics[topic].push({
+				token:token,
+				func:func
+			});
+			console.log('topics:',topics);
+		}
+
+		//基于订阅上的标记引用，通过特定topic取消订阅
+		q.unsubscribe = function(token){
+			for(var m in topics){
+				if(topics[m]){
+					for(var i = 0, j = topics[m].length; i<j;i++){
+						if(topics[m][i].token === token){
+							topics[m].splice(i,1);
+							return token;
+						}
+					}
+				}
+			}
+		}
+
+		
+
+		//返回稍后界面上要用到的当前本地时间
+		getCurrentTime = function(){
+			var date = new Date(),
+				m = date.getMonth()+1,
+				d = date.getDate(),
+				y = date.getFullYear();
+				t = date.toLocaleString().toLowerCase();
+			return (m+'/'+d+'/'+y+''+t);
+		}
+
+		//向网格组件上添加新数据行
+		function addGridRow(data){
+			console.log('updated grid compnent width:'+data);
+		}
+
+		//更新网格数据
+		function updateCounter(data){
+			console.log('data last updated at :'+getCurrentTime()+' with '+data);
+		}
+
+		//使用传递给订阅着的数据data更新网格
+		gridUpdate = function(topic,data){
+			if(data !== 'undefined'){
+				addGridRow(data);
+				updateCounter(data);
+			}
+		}
+
+		//在newDataAvailable topic上创建一个订阅
+		var subscribe = pubsub.subscribe('newDataAvailable',gridUpdate);
+
+		pubsub.publish('newDataAvailable',{
+			sunmmary:'test'
+		});
+
+		pubsub.publish('newDataAvailable',{
+			sunmmary:'test2'
+		});
+	}(pubsub));
+	</script>
+</head>
+<body>
+	
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<script>
+	function ObserverList(){
+		this.observerList = [];
+	}
+
+	ObserverList.prototype.Add = function(obj){
+		return this.observerList.push(obj);
+	}
+
+	ObserverList.prototype.Empty = function(){
+		this.observerList = [];
+	}
+
+	ObserverList.prototype.Count = function(){
+		return this.observerList.length;
+	}
+
+	ObserverList.prototype.Get = function(index){
+		if(index > -1 && index < this.observerList.length){
+			return this.observerList[index];
+		}
+	}
+
+	ObserverList.prototype.Insert =function(obj,index){
+		var pointer = -1;
+
+		if(index === 0){
+			this.observerList.unshift(obj);
+			pointer = index;
+		}else if(index === this.observerList.length){
+			this.observerList.push(obj);
+			pointer = index;
+		}
+		return pointer;
+	}
+
+	ObserverList.prototype.IndexOf = function(obj,startindex){
+		var i = startindex , pointer = -1;
+		while(i < this.observerList.length){
+			if(this.observerList[i] === obj){
+				pointer == i;
+			}
+			i++;
+		}
+		return pointer;
+	}
+	
+	ObserverList.prototype.RemoveIndexAt = function(index){
+		if(index == 0){
+			this.observerList.shift();
+		}else if(index === this.observerList.length -1){
+			this.observerList.pop();
+		}
+	}
+
+	//使用extension来扩展对象
+	function extend(obj,extension){
+		for(var key in obj){
+			extension[key] = obj[key];
+		}
+	}
+
+	/*
+	模拟目标subject
+	在观察者列表上添加删除或通知观察者的能力
+	 */
+	
+	function Subject(){
+		this.observers = new ObserverList();
+	}
+
+	Subject.prototype.AddObserver =function(observer){
+		this.observers.Add(observer);
+	}
+
+	Subject.prototype.RemoveObserver = function(observer){
+		this.observers.RemoveIndexAt(this.observers.indexOf(observer,0));
+	}
+
+	Subject.prototype.Notify = function(context){
+		var observerCount = this.observers.Count();
+		alert(222);
+		for (var i = 0; i < observerCount; i++) {
+			this.observers.Get(i).update(context);
+		};
+	}
+
+	/**
+	 * 定义一个框架来创建新的observer
+	 */
+	
+	function Observer(){
+		this.update = function(){
+			console.log();
+		}
+	}
+	</script>
+</head>
+<body>
+	<button id='addNewObserver'>Add New Observer checkbox</button>
+	<input id='mainCheckbox' type='checkbox'>
+	<div id='observersContainer'></div>
+</body>
+<script>
+	
+	var controlCheckbox = document.getElementById('mainCheckbox'),
+		addBtn = document.getElementById('addNewObserver'),
+		container = document.getElementById('observersContainer');
+	/*
+	利用Subject扩展controlCheckbox
+	 */
+	extend(new Subject(),controlCheckbox);
+
+	//点击checkbox会触发通知到观察者上
+	controlCheckbox['onclick'] = new Function('controlCheckbox.Notify(controlCheckbox.checked)');
+	// controlCheckbox['onclick'] = controlCheckbox.Notify(controlCheckbox.checked);
+	console.log('onclick',controlCheckbox['onclick']);
+	addBtn['onclick'] = AddNewObserver;
+
+	//具体的观察者 concreate observer
+	function AddNewObserver(){
+		// 创建需要添加的新checkbox
+
+		var check = document.createElement('input');
+		check.type='checkbox';
+
+		// 利用observer类来扩展checkbox
+		extend(new Observer(),check);
+
+		check.update = function(value){
+			console.log('hi checked:',value);
+			this.checked = value;
+		};
+
+		check['onclick'] = function(){
+			console.log(this.checked);
+		}
+		//为主subject的观察者列表添加新的观察者
+		controlCheckbox.AddObserver(check);
+
+		//将观察者附件到容器上
+		container.appendChild(check);
+	}
+</script>
+</html>

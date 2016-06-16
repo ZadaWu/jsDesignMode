@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<script>
+	var pubsub = {};
+	(function(q){
+
+		var topics = {},
+			subUid = -1;
+
+		//发布货广播事件，包含特定的tipic名称和参数
+		q.publish = function(topic,args){
+			if(!topics[topic]){
+				return false;
+			}
+
+			var  subscribes = topics[topic],
+				len = subscribes?subscribes.length:0;
+
+			while(len--){
+				subscribes[len].func(topic,args);
+			}
+			return this;
+		}
+
+		//通过特定的名称和回调函数订阅事件，topic/event触发时执行事件
+		q.subscribe = function(topic,func){
+			if(!topics[topic]){
+				topics[topic] = [];
+			}
+
+			var token = (++subUid).toString();
+			topics[topic].push({
+				token:token,
+				func:func
+			});
+			console.log('topics:',topics);
+		}
+
+		//基于订阅上的标记引用，通过特定topic取消订阅
+		q.unsubscribe = function(token){
+			for(var m in topics){
+				if(topics[m]){
+					for(var i = 0, j = topics[m].length; i<j;i++){
+						if(topics[m][i].token === token){
+							topics[m].splice(i,1);
+							return token;
+						}
+					}
+				}
+			}
+		}
+
+		//一个简单的消息处理程序 简单的消息记录器纪录所有通过订阅者接受到的主题和数据
+		var messageLogger = function(topics,data){
+			console.log('Logging:'+topics+':',data);
+		}
+
+		//订阅者监听订阅的topic,一旦该topic广播一个通知，订阅者就调用回调函数
+		var subscription = q.subscribe("inbox/newMessage",messageLogger);
+
+		//发布者负责发布程序感兴趣的topic或通知
+		pubsub.publish('inbox/newMessage','helloword!');
+
+		pubsub.publish('inbox/newMessage',['test','a','b','c']);
+
+		pubsub.publish('inbox/newMessage',{
+			sender:'hello@google.com',
+			body:'hey again'
+		});
+
+		pubsub.unsubscribe('0'); //取消订阅事件
+		
+		pubsub.publish('inbox/newMessage','test!');
+	}(pubsub));
+	</script>
+</head>
+<body>
+	
+</body>
+</html>

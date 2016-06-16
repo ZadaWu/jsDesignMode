@@ -1,0 +1,184 @@
+<html>
+<head>
+	<title>Mediator</title>
+	<script>
+	//中介者模式：它允许我们公开一个统一的借口，系统的不同部分可通过该借口进行通信asd
+	//如果一个系统的各个组件之间看起来有太多的直接关系，也许是时候需求一个中心控制点，以便各个组件可以通过这个中心控制点来进行通信
+	//Mediator模式促进松散耦合的方式是确保组件的交互式通过这个中心点来处理的，而不是通过显示的引用彼此，这种模式可以帮助我们解耦系统并提高
+	//组件的可重用性
+	//例如机场交通控制系统。机场控制塔（中介者）处理飞机的起飞和降落，因为所有通信都是从飞机到控制塔，而不是飞机和飞机直接相互通信的。中央
+	//控制系统时该系统成功的关键，而这才是中介者在软件设计中所担任的真正角色
+
+
+	//通过生成对象实例，之后我们可以很容易地更新订阅者，而不需要注销并重新注册他们。
+	//订阅着可以写成构造函数，该函数接受三个参数：一个可被调用的函数f n，一个option对象和一个context上下文
+	//将context上下文传递给订阅着，默认上下文是windows对象
+	(function(root){
+		function guidGenerator(){
+			/*生成GUID，以便以后很方便地引用他们
+			 */
+		}
+
+		//订阅者构造函数
+		function Subscriber(fn,options,context){
+			if(!this instanceof Subscriber){
+				return new Subscriber(fn,context,options);
+			}else{
+				this.id = guidGenerator();
+				this.fn = fn;
+				this.options = options;
+				this.context = context;
+				this.topic = null;
+			}
+		}
+
+		function Topic(namespace){
+			if(!this instanceof Topic){
+				return new Topic(namespace);
+			}else{
+				this.namespace = namespace || "";
+				this._callbacks = [];
+				this._topics = [];
+				this.stopped = false;
+			}
+		}
+
+		Topic.prototype = {
+			AddSubscriber:function(fn,options,context){
+				var callback = new Subscriber(fn,options,context);
+				this._callbacks.push(callback);
+				callback.topic = this;
+				return callback;
+			},
+			stopPropagation:function(){
+				this.stopped = true;
+			},
+			GetSubScriber:function(id){
+				for (var x = 0,y = this._callbacks.length; x < y; x++) {
+					if(this._callbacks[x].id == id || this._callbacks[x].fn == id){
+						return this._callbacks[x];
+					}
+				};
+	
+				for (var z in this._topics) {
+					if(this._topics.hasOwnProperty(z)){
+						var sub = this._topics[z].GetSubScriber(id)；
+						if(sub!==undefined){
+							return sub;
+						}
+					}
+				};
+			},
+			AddTopic:function(topic){
+				this._topics[topic] = new Topic((this.namespace?this.namespace+':':+topic));
+			},
+			HasTopic:function(topic){
+				return this._topics.hasOwnProperty(topic);
+			},
+			ReturnTopic:function(topic){
+				return this._topics[topic];
+			},
+			RemoveSubscribe:function(identifier){
+				if(!identifier){
+					this._callbacks = [];
+					for (var z in this._topics) {
+						if(this._topics[z].RemoveSubscribe(identifier))
+					};
+				}
+	
+				for (var y = 0,x = this._callbacks.length; y<x; y++) {
+					if(this._callbacks[y].fn == identifier || this._callbacks[y].id == identifier){
+						this._callbacks.topic = null;
+						this._callbacks.splice(y,1);
+						x--;y--;
+					}
+				};
+			},
+			Publish:function(data){
+				for (var y = 0,x = this._callbacks.length; y<x; y++) {
+					var callback = this._callbacks[y],l;
+					callback.fn.apply(callback.context,data);
+					l = this._callbacks.length;
+	
+					if(l<x){
+						y--;
+						x=1;
+					}
+				}
+	
+				for (var x in this._topics) {
+					if(!this.stopped){
+						if(this._topics.hasOwnProperty(x)){
+							this._topics[x].Publish(data);
+						}
+					}
+				};
+				this.stopped = false;
+			}
+		};
+
+		function Mediator(){
+			if(!this instanceof Mediator){
+				return new Mediator();
+			}else{
+				this._topics = new Topic("");
+			}
+		}
+
+		Mediator.prototype = {
+			GetTopic:function(namespace){
+				var topic = this._topics,
+					namespaceHierarchy = namespace.split(":");
+
+				if( namespace === ''){
+					return topic;
+				}
+
+				if(namespaceHierarchy.length > 0){
+					for (var i = 0,j = namespaceHierarchy.length; i < j; i++) {
+						if(!topic.HasTopic(namespaceHierarchy[i])){
+							topic.AddTopic(namespaceHierarchy[i]);
+						}
+
+						topic = topic.ReturnTopic(namespaceHierarchy[i]);
+					};
+				}
+				return topic;
+			},
+			Subscribe:function(topiclName,fn,options,context){
+				var options = options || {},
+					context = context || {},
+					topic = this.GetTopic(topicName),
+					sub = topic.AddSubscriber(fn,options,context);
+
+				return sub;
+			},
+			//通过给定的订阅者ID／命名函数和topic命名空间返回一个订阅者
+			GetSubScriber:function(indentifier,topic){
+				return this.GetTopic(topic || "").GetSubScriber(identifier);
+			},
+			Remove:function(topicName,identifier){
+				this.GetTopic(topicName).RemoveSubscribe(identifier);
+			},
+			Publish:function(topicName){
+				var args = Array.prototype.slice.call(arguments,l);
+				topic = this.GetTopic(topicName);
+				args.push(topic);
+				this.GetTopic(topicName).Publish(args);
+			}
+		};
+
+		
+		root.Mediator = Mediator;
+		Mediator.Topic = Topic;
+		Mediator.Subscribe = Subscriber;
+		Mediator.Publish('inbox:messages:new',[args]);
+	})(window);
+
+
+	</script>
+</head>
+<body>
+
+</body>
+</html>
